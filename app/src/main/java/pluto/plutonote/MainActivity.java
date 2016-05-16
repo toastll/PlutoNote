@@ -111,7 +111,7 @@ public class MainActivity extends BaseActivity {
                 mMaterialDialog = new MaterialDialog(MainActivity.this)
                         .setTitle("提示！")
                         .setMessage("真的要删除吗？真的要删除吗？真的要删除吗？重要的事情说三遍~~")
-                        .setPositiveButton("OK", new View.OnClickListener() {
+                        .setPositiveButton("确定", new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 mMaterialDialog.dismiss();
@@ -127,10 +127,9 @@ public class MainActivity extends BaseActivity {
                                 getDatabaseData();
                                 mAdapter.notifyDataSetChanged();
 
-
                             }
                         })
-                        .setNegativeButton("CANCEL", new View.OnClickListener() {
+                        .setNegativeButton("取消", new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 Toast.makeText(MainActivity.this, "你点击了取消", Toast.LENGTH_SHORT).show();
