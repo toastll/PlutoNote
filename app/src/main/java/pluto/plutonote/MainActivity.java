@@ -15,7 +15,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Adapter;
 import android.widget.Toast;
 
 import com.lidroid.xutils.ViewUtils;
@@ -28,7 +27,7 @@ import java.util.List;
 import me.drakeet.materialdialog.MaterialDialog;
 import pluto.plutonote.activity.BaseActivity;
 import pluto.plutonote.activity.NoteActivity;
-import pluto.plutonote.adapter.MyAdapter;
+import pluto.plutonote.adapter.RecycleAdapter;
 import pluto.plutonote.bean.NoteEntity;
 import pluto.plutonote.database.NotesDB;
 import pluto.plutonote.utils.Constant;
@@ -65,7 +64,7 @@ public class MainActivity extends BaseActivity {
     RecyclerView rv_list;
 
     List<NoteEntity> mNoteEntityList = new ArrayList<NoteEntity>();
-    private MyAdapter mAdapter;/* todo */
+    private RecycleAdapter mAdapter;/* todo */
 
     private int currentSort;
 
@@ -79,6 +78,7 @@ public class MainActivity extends BaseActivity {
         getDatabaseData();/*为list初始化*/
         initRecyclerView();/*初始化recycle*/
         initEvent();
+
     }
 
 
@@ -89,21 +89,22 @@ public class MainActivity extends BaseActivity {
 
         getDatabaseData();/*为mNoteEntityList赋值*/
 
-        mAdapter = new MyAdapter(mNoteEntityList, MainActivity.this);/*实例化adapter*/
+        mAdapter = new RecycleAdapter(mNoteEntityList, MainActivity.this);/*实例化adapter*/
         rv_list.setAdapter(mAdapter);/*设置适配器*/
 
         rv_list.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         rv_list.setItemAnimator(new DefaultItemAnimator());/*设置动画效果*/
-        mAdapter.setOnItemClickListener(new MyAdapter.OnItemClickListener() {
+        mAdapter.setOnItemClickListener(new RecycleAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                Bundle bundle =new Bundle();
-                bundle.putInt(Constant.COLUMN_NAME_ID,mNoteEntityList.get(position).getId());
-                bundle.putInt(Constant.COLUMN_NAME_NOTE_SORT,mNoteEntityList.get(position).getSort());
+                Bundle bundle = new Bundle();
+                bundle.putInt(Constant.COLUMN_NAME_ID, mNoteEntityList.get(position).getId());
+                bundle.putInt(Constant.COLUMN_NAME_NOTE_SORT, mNoteEntityList.get(position).getSort());
                 nextActivityForResult(NoteActivity.class, bundle, Constant.NOTE_REQUEST_CODE);
             }
 
             MaterialDialog mMaterialDialog;
+
             @Override
             public void onItemLongClickListener(View view, final int position) {
 
@@ -118,7 +119,7 @@ public class MainActivity extends BaseActivity {
                                 int deleteId = mNoteEntityList.get(position).getId();
 
                                 try {
-                                    dbWrite.delete(Constant.TABLE_NAME_NOTES, Constant.COLUMN_NAME_ID +"=?",new String[]{Integer.toString(deleteId)});
+                                    dbWrite.delete(Constant.TABLE_NAME_NOTES, Constant.COLUMN_NAME_ID + "=?", new String[]{Integer.toString(deleteId)});
                                     Toast.makeText(MainActivity.this, "你点击了确定", Toast.LENGTH_SHORT).show();
                                 } catch (Exception e) {
                                     Toast.makeText(MainActivity.this, "删除记事失败~", Toast.LENGTH_SHORT).show();
@@ -174,7 +175,7 @@ public class MainActivity extends BaseActivity {
                 mAdapter.notifyDataSetChanged();
 
                 dl_drawer.closeDrawers();
-                return true;/*todo 此处返回*/
+                return false;/*todo 此处返回*/
             }
         });
 
@@ -182,7 +183,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onClick(View v) {
                 Bundle bundle = new Bundle();
-                bundle.putInt(Constant.COLUMN_NAME_NOTE_SORT,currentSort);/*当前页面分类*/
+                bundle.putInt(Constant.COLUMN_NAME_NOTE_SORT, currentSort);/*当前页面分类*/
                 nextActivityForResult(NoteActivity.class, bundle, Constant.NOTE_REQUEST_CODE);
             }
         });
@@ -190,14 +191,14 @@ public class MainActivity extends BaseActivity {
 
     /**
      * 从编辑日志返回
+     *
      * @param requestCode
      * @param resultCode
      * @param data
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (RESULT_OK == resultCode)
-        {
+        if (RESULT_OK == resultCode) {
             getDatabaseData();
             mAdapter.notifyDataSetChanged();
 
@@ -207,20 +208,17 @@ public class MainActivity extends BaseActivity {
     /**
      * 根据当前显示的页面显示需要获取的数据
      */
-    private void getDatabaseData (){
+    private void getDatabaseData() {
         Cursor cursorRead;
 
         //根据传入的id获取信息
             /* todo */
-        if (0 == currentSort){
+        if (0 == currentSort) {
             cursorRead = dbRead.query(Constant.TABLE_NAME_NOTES, null, null, null, null, null, null);
-        }else{
+        } else {
             cursorRead = dbRead.query(Constant.TABLE_NAME_NOTES, null, Constant.COLUMN_NAME_NOTE_SORT + "=?", new String[]{currentSort + ""}, null, null, null);
-    }
+        }
 
-        int count = cursorRead.getCount();
-        Toast.makeText(MainActivity.this, ""+count, Toast.LENGTH_SHORT).show();
-//            List<NoteEntity> tempList = new ArrayList<NoteEntity>();
         mNoteEntityList.clear();
         while (cursorRead.moveToNext()) {
             int noteId = cursorRead.getInt(cursorRead.getColumnIndex(Constant.COLUMN_NAME_ID));
@@ -229,31 +227,29 @@ public class MainActivity extends BaseActivity {
             String createDate = cursorRead.getString(cursorRead.getColumnIndex(Constant.COLUMN_NAME_NOTE_DATE));
             int sort = cursorRead.getInt(cursorRead.getColumnIndex(Constant.COLUMN_NAME_NOTE_SORT));
 
-            NoteEntity tempNote =new NoteEntity();
+            NoteEntity tempNote = new NoteEntity();
             tempNote.setId(noteId);
             tempNote.setNoteTitle(noteTitle);
             tempNote.setNoteContent(noteContent);
             tempNote.setCreateDate(createDate);
             tempNote.setSort(sort);
 
-            mNoteEntityList.add(tempNote);/*todo 后续处理*/
+            mNoteEntityList.add(tempNote);/* 后续处理*/
         }
 
-//        mAdapter.notifyDataSetChanged();
     }
 
     private NotesDB db;
-    private SQLiteDatabase dbRead,dbWrite;
+    private SQLiteDatabase dbRead, dbWrite;
 
     /**
      * 获取数据库实例
      */
-    private void getDbInstance(){
+    private void getDbInstance() {
         db = new NotesDB(this);//获取数据库实例
         dbRead = db.getReadableDatabase();
         dbWrite = db.getWritableDatabase();
     }
-
 
     /**
      * 初始化ToolBar
@@ -265,27 +261,24 @@ public class MainActivity extends BaseActivity {
         mActionBarDrawerToggle = new ActionBarDrawerToggle(this, dl_drawer, toolbar, R.string.drawer_open, R.string.drawer_close);
         mActionBarDrawerToggle.syncState();/*刷新【菜单>>箭头】的相互转化*/
 //        dl_drawer.setDrawerListener(mActionBarDrawerToggle);
-        /*设置监听器,谷歌官方用addDrawerListener代替了setDrawerListener，因为后者在新的api中可能会报空指针 todo*/
+        /*设置监听器,谷歌官方用addDrawerListener代替了setDrawerListener，因为后者在新的api中可能会报空指针 */
         /*【菜单+箭头】的监听器，与mActionBarDrawerToggle.syncState()方法配合使用，才能实现【菜单与箭头】的转换*/
         dl_drawer.addDrawerListener(mActionBarDrawerToggle);
 
     }
 
-
-
-    
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        //TODO   https://github.com/MiguelCatalan/MaterialSearchView
+        // https://github.com/MiguelCatalan/MaterialSearchView
         MenuItem item = menu.findItem(R.id.action_search);
         searchView.setMenuItem(item);
 
         return true;
     }
 
+    /*todo*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
