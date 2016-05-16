@@ -58,11 +58,9 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
     @ViewInject(R.id.tv_sort_item)
     private TextView tvSortItem;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_note);
         setContentView(R.layout.activity_notes);
         //TODO 切换动画
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);  //关闭软键盘
@@ -74,15 +72,12 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
             initToolBar(toolbar, "新的笔记", true);
         }else {
             initToolBar(toolbar, "编辑笔记", true);
-
         }
 
+        /*初始化popupWindow*/
         initPopupWindow();
-//        titleWrapper.setHint("标题");
-//        contentWrapper.setHint("内容");
-        /*检测传入的id在数据库中原本是否存在*/
+        /*获取记事本的数据*/
         getNote();
-
 
         tvSortItem.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -91,7 +86,6 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
                 if (popWindow != null && popWindow.isShowing()) {
                     popWindow.dismiss();
                 } else {
-
                     int popupWidth = view.getMeasuredWidth();
                     int popupHeight = view.getMeasuredHeight();
                     int[] location = new int[2];
@@ -100,7 +94,6 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
                     popWindow.setFocusable(true);
                     popWindow.setBackgroundDrawable(new BitmapDrawable());
                     popWindow.setOutsideTouchable(true);
-
 
                     v.getLocationOnScreen(location);
                     popWindow.setAnimationStyle(R.style.mypopwindow_anim_style);
@@ -123,7 +116,10 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
     View view;
     PopupWindow popWindow;
 
+    /*用于获取选中item的文本内容*/
     TextView tvSortAll, tvSortWork, tvSortStudy, tvSortLife;
+    /*显示选中状态的imageView*/
+    ImageView ivAllCheck, ivWorkCheck,ivStudyCheck,ivLifeCheck;
 
 
     private void initPopupWindow() {
@@ -132,15 +128,19 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
 
         /*实例化popWindow，并为其设置布局属性*/
         popWindow = new PopupWindow(view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-//        popWindow.setSoftInputMode(PopupWindow.INPUT_METHOD_NEEDED);
         view.measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED);
         /*设置是否可点击*/
-        popWindow.setOutsideTouchable(false);
+//        popWindow.setOutsideTouchable(false);
 
         View linearlayoutAll = view.findViewById(R.id.item_all_sort);
         View linearlayoutWork = view.findViewById(R.id.item_work_sort);
         View linearlayoutStudy = view.findViewById(R.id.item_study_sort);
         View linearlayoutLife = view.findViewById(R.id.item_life_sort);
+
+        ivAllCheck = (ImageView) linearlayoutAll.findViewById(R.id.iv_sort_current);
+        ivWorkCheck = (ImageView) linearlayoutWork.findViewById(R.id.iv_sort_current);
+        ivStudyCheck = (ImageView) linearlayoutStudy.findViewById(R.id.iv_sort_current);
+        ivLifeCheck = (ImageView) linearlayoutLife.findViewById(R.id.iv_sort_current);
 
         tvSortAll = (TextView) linearlayoutAll.findViewById(R.id.tv_sort_pop);
         tvSortWork = (TextView) linearlayoutWork.findViewById(R.id.tv_sort_pop);
@@ -156,9 +156,8 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
         linearlayoutWork.setOnClickListener(this);
         linearlayoutStudy.setOnClickListener(this);
         linearlayoutLife.setOnClickListener(this);
-
-
     }
+
 
 
     /**
@@ -243,7 +242,7 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
                 etContent.setText(content);
                 String creteTime = cInput.getString(cInput.getColumnIndex(Constant.COLUMN_NAME_NOTE_DATE));
                 tvCreateDate.setText("修改时间  " + MyDateUtils.getStringForFormat(creteTime));
-                int sort = cInput.getInt(cInput.getColumnIndex(Constant.COLUMN_NAME_NOTE_SORT));
+                sort = cInput.getInt(cInput.getColumnIndex(Constant.COLUMN_NAME_NOTE_SORT));
                 tvSortItem.setText(sortName[sort]);
             }
         } else {/*如果数据库中不存在该数据*//*todo*/
@@ -251,6 +250,9 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
             tvCreateDate.setText("创建时间  " + currentTime);/* TODO */
             tvSort.setText(sortName[getIntent().getIntExtra(Constant.COLUMN_NAME_NOTE_SORT, 0)]);
         }
+
+        /*显示选中状态图标*/
+        checkWhat(sort);
 
     }
 
@@ -271,7 +273,6 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
             cv.put(Constant.COLUMN_NAME_NOTE_TITLE, mTitle);
             cv.put(Constant.COLUMN_NAME_NOTE_CONTENT, mContent);
             cv.put(Constant.COLUMN_NAME_NOTE_DATE, MyDateUtils.getTimeAsString(MyDateUtils.getTimeAsDate()));
-
             cv.put(Constant.COLUMN_NAME_NOTE_SORT, sort);
 
             if (noteId > -1) {//原本存在,则更新
@@ -286,6 +287,10 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
 
     }
 
+    /**
+     * popupWindow内的选项被点击
+     * @param v
+     */
     @Override
     public void onClick(View v) {
         popWindow.dismiss();
@@ -293,6 +298,7 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
             case R.id.item_all_sort:
                 sort = 0;
                 tvSortItem.setText(sortName[0]);
+
                 break;
             case R.id.item_work_sort:
                 sort = 1;
@@ -306,7 +312,37 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
                 sort = 3;
                 tvSortItem.setText(sortName[3]);
                 break;
+        }
 
+        /*显示选中状态图标*/
+        checkWhat(sort);
+    }
+
+    /**
+     * 被选中的item显示选中图标
+     * @param check
+     */
+    private void checkWhat(int check){
+
+        ivAllCheck.setVisibility(View.INVISIBLE);
+        ivWorkCheck.setVisibility(View.INVISIBLE);
+        ivStudyCheck.setVisibility(View.INVISIBLE);
+        ivLifeCheck.setVisibility(View.INVISIBLE);
+
+        switch (check){
+            case 0:
+                ivAllCheck.setVisibility(View.VISIBLE);
+                break;
+            case 1:
+                ivWorkCheck.setVisibility(View.VISIBLE);
+                break;
+            case 2:
+                ivStudyCheck.setVisibility(View.VISIBLE);
+                break;
+            case 3:
+                ivLifeCheck.setVisibility(View.VISIBLE);
+                break;
         }
     }
+
 }
