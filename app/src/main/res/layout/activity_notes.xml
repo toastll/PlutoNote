@@ -37,7 +37,6 @@
             <include
                 layout="@layout/include_note_foot"
                 android:layout_alignParentBottom="true"
-
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent" />
         </RelativeLayout>
