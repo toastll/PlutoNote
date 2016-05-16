@@ -1,100 +1,137 @@
 package pluto.plutonote.adapter;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.TextView;
 
 import java.util.List;
 
 import pluto.plutonote.R;
+import pluto.plutonote.bean.NoteEntity;
+import pluto.plutonote.utils.MyDateUtils;
 
 /**
  * Created by Pluto  on 2016/5/6.
  */
-public class RecycleAdapter  extends RecyclerView.Adapter<RecycleAdapter.ViewHolder>{
-    private List<String> mData;
+public class RecycleAdapter extends RecyclerView.Adapter<RecycleAdapter.MyViewHolder> {
 
-    public RecycleAdapter(List<String> mData) {
-        this.mData = mData;
+    private List<NoteEntity> mDataList;/*数据源*/
+    private LayoutInflater mInflater;/*布局解析器*/
+
+    /*声明一个接口，用于实现点击事件*/
+    public interface OnItemClickListener{
+        void onItemClick(View view,int position);
+        void onItemLongClickListener(View view, int position);
     }
 
-    /* todo 此处的作用是？*/
-    public OnItemClickListener itemClickListener;
+    private OnItemClickListener mOnItemClickListener;/*设置接口对象*/
 
-    /*  todo 作用呢？*/
-    public void setItemClickListener(OnItemClickListener itemClickListener){
-        this.itemClickListener = itemClickListener;
-    }
-
-    /*todo 自定义的接口*/
-    private interface OnItemClickListener{
-        void onItemClick(View view, int position);
+    /**
+     * 设置点击事件监听器供外部调用
+     * @param mOnItemClickListener
+     */
+    public void setOnItemClickListener(OnItemClickListener mOnItemClickListener){
+        this.mOnItemClickListener = mOnItemClickListener;
     }
 
 
     /**
-     *  将布局转化为View并传递给RecycleView封装好的ViewHolder
+     * 构造方法
+     * @param dataList 数据源
+     * @param mContext 上下文
+     */
+    public RecycleAdapter(List<NoteEntity> dataList, Context mContext) {
+        this.mDataList = dataList;
+        this.mInflater = LayoutInflater.from(mContext);/**/
+
+    }
+
+    /**
+     * 创建ViewHolder
+     * 【将布局转化为VIew,并传递给RecyclerView封装好的ViewHolder】
      * @param parent
      * @param viewType
      * @return
      */
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        /*将布局转化为View并传递给RecycleView封装好的ViewHolder*/
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.rc_item, parent, false);
+    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-        return new ViewHolder(view);
+        /*获取itemView*/
+        View view = mInflater.inflate(R.layout.rc_item, parent, false);
+        MyViewHolder holder = new MyViewHolder(view);
+
+        return holder;
     }
 
     /**
-     * 建立起ViewHandler中 视图与数据的关联
+     * 绑定ViewHolder并进行相应的赋值
      * @param holder
      * @param position
      */
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.tv_title.setText(mData.get(position)+position);
+    public void onBindViewHolder(final MyViewHolder holder, int position) {
+
+        holder.tv_title.setText(mDataList.get(position).getNoteTitle());
+        holder.tv_content.setText(mDataList.get(position).getNoteContent());
+        String dateString =  MyDateUtils.getStringForFormat(mDataList.get(position).getCreateDate());
+        holder.tv_date.setText(dateString);
+        switch (mDataList.get(position).getSort()){
+            case 0:/*工作*/
+                holder.tv_sort.setText("全部");
+                break;
+            case 1:/*学习*/
+                holder.tv_sort.setText("工作");
+                break;
+            case 2:/*生活*/
+                holder.tv_sort.setText("学习");
+                break;
+            case  3:
+                holder.tv_sort.setText("生活");
+                break;
+        }
 
 
+        /*为列表项*/
+        if (null != mOnItemClickListener){/*外部设置了点击事件监听器*/
+             holder.itemView.setOnClickListener(new View.OnClickListener() {
+                 @Override
+                 public void onClick(View v) {/*v 与 holder.itemView是同一个吗*/
+                    int layoutPosition = holder.getLayoutPosition();/*得到布局的position*/
+//                     holder.getAdapterPosition()/*todo 与layoutPosition的区别是？*/
+                     mOnItemClickListener.onItemClick(holder.itemView, layoutPosition);
+                 }
+             });
 
+            holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    int layoutPosition = holder.getLayoutPosition();/*得到布局的position*/
+                    mOnItemClickListener.onItemLongClickListener(holder.itemView, layoutPosition);
+                    return false;
+                }
+            });
+        }
     }
 
-    /**
-     * 获取子项个数
-     * @return
-     */
     @Override
     public int getItemCount() {
-        return mData.size();
+        return mDataList.size();
     }
 
+    public class MyViewHolder extends RecyclerView.ViewHolder{
+        TextView tv_title, tv_content, tv_sort,tv_date;
 
-
-
-    /**
-     * RecycleViewAdapter要求必须在内部写入ViewHolder，该ViewHolder继承自RecyclerView.ViewHolder
-     */
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-         private TextView tv_title;
-
-        public ViewHolder(View itemView) {
+        public MyViewHolder(View itemView) {
             super(itemView);
 
-            tv_title = (TextView) itemView;
-            tv_title.setOnClickListener(this);
-        }
-
-        /*通过接口回调来实现RecycleView的点击事件*/
-        @Override
-        public void onClick(View v) {
-            if ( null != itemClickListener){
-                itemClickListener.onItemClick(v, getPosition());
-            }
+            tv_title = (TextView) itemView.findViewById(R.id.tv_title);
+            tv_content = (TextView) itemView.findViewById(R.id.tv_content);
+            tv_sort = (TextView) itemView.findViewById(R.id.tv_sort);
+            tv_date = (TextView) itemView.findViewById(R.id.tv_date);
         }
     }
-
 
 }

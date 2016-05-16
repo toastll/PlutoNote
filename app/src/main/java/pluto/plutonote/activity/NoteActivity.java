@@ -1,8 +1,6 @@
 package pluto.plutonote.activity;
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -13,12 +11,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.MeasureSpec;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
@@ -27,19 +23,12 @@ import android.widget.Toast;
 
 import com.lidroid.xutils.ViewUtils;
 import com.lidroid.xutils.view.annotation.ViewInject;
-import com.lidroid.xutils.view.annotation.event.OnClick;
 import com.rey.material.widget.CheckBox;
 
-import org.greenrobot.eventbus.EventBus;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import pluto.plutonote.EventArgs.NoteActivityArgs;
 import pluto.plutonote.R;
 import pluto.plutonote.database.NotesDB;
 import pluto.plutonote.utils.Constant;
-import pluto.plutonote.utils.MyDbUtils;
+import pluto.plutonote.utils.MyDateUtils;
 
 /**
  * 类名：新建日记
@@ -78,7 +67,16 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
         //TODO 切换动画
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);  //关闭软键盘
         ViewUtils.inject(this);
-        initToolBar(toolbar, "新的笔记", true);
+
+        noteId = getIntent().getIntExtra(Constant.COLUMN_NAME_ID, -1);/* 数据传入*/
+        sort = getIntent().getIntExtra(Constant.COLUMN_NAME_NOTE_SORT, 0);
+        if (noteId<0){
+            initToolBar(toolbar, "新的笔记", true);
+        }else {
+            initToolBar(toolbar, "编辑笔记", true);
+
+        }
+
         initPopupWindow();
 //        titleWrapper.setHint("标题");
 //        contentWrapper.setHint("内容");
@@ -105,37 +103,9 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
 
 
                     v.getLocationOnScreen(location);
-//                        popupWindow.setAnimationStyle(R.style.mypopwindow_anim_style);
+                    popWindow.setAnimationStyle(R.style.mypopwindow_anim_style);
                     popWindow.showAtLocation(v, Gravity.NO_GRAVITY, (location[0] + v.getWidth() / 2) - popupWidth / 2, location[1] - popupHeight);
 
-//                    view.setOnClickListener(new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View v) {
-
-
-//                            popWindow.dismiss();
-//                            String currentSort = ((TextView)v.findViewById(R.id.tv_sort_pop)).getText().toString();
-//                            tvSort.setText(currentSort);
-//
-////                            /*todo 换颜色*/
-//                            switch (v.getId()){
-//                                case R.id.item_all_sort:
-////                                    ivSortIcon.setBackground();
-//                                    Toast.makeText(NoteActivity.this, currentSort, Toast.LENGTH_SHORT).show();
-//                                    break;
-//                                case R.id.item_work_sort:
-//                                    Toast.makeText(NoteActivity.this, currentSort, Toast.LENGTH_SHORT).show();
-//                                    break;
-//                                case R.id.item_study_sort:
-//                                    Toast.makeText(NoteActivity.this, currentSort, Toast.LENGTH_SHORT).show();
-//                                    break;
-//                                case  R.id.item_life_sort:
-//                                    Toast.makeText(NoteActivity.this, currentSort, Toast.LENGTH_SHORT).show();
-//                                    break;
-//                            }
-//                        }
-//                    });
-////
 //                    int screenHeight = NoteActivity.this.getWindowManager().getDefaultDisplay().getHeight();
 ////                    float viewY = v.getLayoutDirection();
 //                    int[] mLocation = new int[2];
@@ -143,64 +113,7 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
 //                    int viewY = mLocation[1];
 //                    if (viewY <= (screenHeight * 3 / 4)) {/*View的位置在屏幕的1/3之上*//*软键盘弹出状态*/
 //                        Toast.makeText(NoteActivity.this, "View的纵坐标：" + viewY, Toast.LENGTH_SHORT).show();
-//
-//                        // 允许点击外部消失
-////                        popWindow.setBackgroundDrawable(new BitmapDrawable());
-////                        popWindow.setOutsideTouchable(true);
-////                        popWindow.setFocusable(true);
-////
-////                        popWindow.setSoftInputMode(PopupWindow.INPUT_METHOD_FROM_FOCUSABLE);
-////
-//////                        popWindow.setSoftInputMode(PopupWindow.INPUT_METHOD_NEEDED);
-////
-////                        popWindow.showAsDropDown(v, 0, 0, Gravity.BOTTOM);
-//
-////                        view.findViewById(R.id.item_all_sort).requestFocus();
-////                        EditText etFocus = (EditText) view.findViewById(R.id.item_all_sort).findViewById(R.id.tv_sort_pop);
-////                        etFocus.setFocusableInTouchMode(false);/*设置不可编辑*/
-////                        etFocus.requestFocus();
-////                        if (etFocus.isFocused()){
-////                            Toast.makeText(NoteActivity.this, "编辑框获得了焦点", Toast.LENGTH_SHORT).show();
-////                        }
-//
-//                        int popupWidth = view.getMeasuredWidth();
-//                        int popupHeight = view.getMeasuredHeight();
-//                        int[] location = new int[2];
-//
-//                        // 允许点击外部消失
-//                        popWindow.setFocusable(true);
-//                        popWindow.setBackgroundDrawable(new BitmapDrawable());
-//                        popWindow.setOutsideTouchable(true);
-//
-//
-//                        v.getLocationOnScreen(location);
-////                        popupWindow.setAnimationStyle(R.style.mypopwindow_anim_style);
-//                        popWindow.showAtLocation(v, Gravity.NO_GRAVITY, (location[0] + v.getWidth() / 2) - popupWidth / 2, location[1] - popupHeight);
-//
-//                        view.findViewById(R.id.item_all_sort).requestFocus();
-//
-//
-//                    } else {
-//                        Toast.makeText(NoteActivity.this, "View的纵坐标：" + viewY, Toast.LENGTH_SHORT).show();
-//                        int popupWidth = view.getMeasuredWidth();
-//                        int popupHeight = view.getMeasuredHeight();
-//                        int[] location = new int[2];
-//
-//                        // 允许点击外部消失
-//                        popWindow.setFocusable(true);
-//                        popWindow.setBackgroundDrawable(new BitmapDrawable());
-//                        popWindow.setOutsideTouchable(true);
-//
-//
-//                        v.getLocationOnScreen(location);
-////                        popupWindow.setAnimationStyle(R.style.mypopwindow_anim_style);
-//                        popWindow.showAtLocation(v, Gravity.NO_GRAVITY, (location[0] + v.getWidth() / 2) - popupWidth / 2, location[1] - popupHeight);
 
-
-                        /*控制软键盘*/
-//                        InputMethodManager mInputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-//                        mInputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED,InputMethodManager.RESULT_SHOWN);
-//                    }
                 }
             }
         });
@@ -272,8 +185,7 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
         int id = item.getItemId();
         switch (id) {
             case R.id.action_done:/*点击完成*/
-                if (saveNote()) {
-                    /*todo 将数据存入数据库*/
+                if (saveNote()) {/*数据存入数据库*/
                     Intent resultItent = this.getIntent();
                     setResult(RESULT_OK, resultItent);
                     finish();
@@ -286,7 +198,7 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
     }
 
 
-    private String[] sortName = new String[]{"全部","工作","学习","生活"};
+    private String[] sortName = new String[]{"全部", "工作", "学习", "生活"};
 
     /**
      * 数据库
@@ -320,8 +232,6 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
         dbRead = db.getReadableDatabase();
         dbWrite = db.getWritableDatabase();
 
-        noteId = getIntent().getIntExtra(Constant.COLUMN_NAME_ID, -1);/*todo  数据传入*/
-        sort = getIntent().getIntExtra(Constant.COLUMN_NAME_NOTE_SORT,0);
 
         if (noteId > -1) {/*如果数据库中存有该数据*/
             //根据传入的id获取信息
@@ -332,13 +242,14 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
                 String content = cInput.getString(cInput.getColumnIndex(Constant.COLUMN_NAME_NOTE_CONTENT));
                 etContent.setText(content);
                 String creteTime = cInput.getString(cInput.getColumnIndex(Constant.COLUMN_NAME_NOTE_DATE));
-                tvCreateDate.setText("修改时间  "+ creteTime);
+                tvCreateDate.setText("修改时间  " + MyDateUtils.getStringForFormat(creteTime));
                 int sort = cInput.getInt(cInput.getColumnIndex(Constant.COLUMN_NAME_NOTE_SORT));
                 tvSortItem.setText(sortName[sort]);
             }
-        } else {/*如果数据库中不存在该数据*/
-            tvCreateDate.setText("创建时间  " + MyDbUtils.getTimeAsString(MyDbUtils.getTimeAsDate()));
-            tvSort.setText(sortName[getIntent().getIntExtra(Constant.COLUMN_NAME_NOTE_SORT,0)]);
+        } else {/*如果数据库中不存在该数据*//*todo*/
+            String currentTime = MyDateUtils.subTime(MyDateUtils.getTimeAsString(MyDateUtils.getTimeAsDate()));
+            tvCreateDate.setText("创建时间  " + currentTime);/* TODO */
+            tvSort.setText(sortName[getIntent().getIntExtra(Constant.COLUMN_NAME_NOTE_SORT, 0)]);
         }
 
     }
@@ -354,22 +265,21 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
         String mContent = etContent.getText().toString();
         ContentValues cv = new ContentValues();
 
-        //TODO 判定title,content是否为空 为空则提示,否则就存储
+        //判定title,content是否为空 为空则提示,否则就存储
         if (!mTitle.isEmpty() && !mContent.isEmpty()) {
 
             cv.put(Constant.COLUMN_NAME_NOTE_TITLE, mTitle);
             cv.put(Constant.COLUMN_NAME_NOTE_CONTENT, mContent);
-            cv.put(Constant.COLUMN_NAME_NOTE_DATE, MyDbUtils.getTimeAsString(MyDbUtils.getTimeAsDate()));
+            cv.put(Constant.COLUMN_NAME_NOTE_DATE, MyDateUtils.getTimeAsString(MyDateUtils.getTimeAsDate()));
+
             cv.put(Constant.COLUMN_NAME_NOTE_SORT, sort);
 
             if (noteId > -1) {//原本存在,则更新
-               int flage =  dbWrite.update(Constant.TABLE_NAME_NOTES, cv, Constant.COLUMN_NAME_ID + "=?", new String[]{noteId + ""});
+                dbWrite.update(Constant.TABLE_NAME_NOTES, cv, Constant.COLUMN_NAME_ID + "=?", new String[]{noteId + ""});
             } else {//原本不存在,就插入
-               long flag =  dbWrite.insert(Constant.TABLE_NAME_NOTES, null, cv);
+                dbWrite.insert(Constant.TABLE_NAME_NOTES, null, cv);
             }
-
             return true;
-
         } else {
             return false;
         }
@@ -379,8 +289,7 @@ public class NoteActivity extends BaseActivity implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         popWindow.dismiss();
-        v.getId();
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.item_all_sort:
                 sort = 0;
                 tvSortItem.setText(sortName[0]);
